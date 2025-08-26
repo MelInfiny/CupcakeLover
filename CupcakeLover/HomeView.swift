@@ -2,8 +2,6 @@
 //  HomeView.swift
 //  CupcakeLover
 //
-//
-
 
 import SwiftUI
 

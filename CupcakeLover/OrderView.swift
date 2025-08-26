@@ -14,6 +14,13 @@ struct OrderView: View {
     @State private var frostingQty  = 0
     @State private var coulisQty    = 0
 
+    init(order: Order = Order()) {
+           _order = State(initialValue: order)
+           _sprinklesQty = State(initialValue: order.addSprinkles ? 1 : 0)
+           _frostingQty  = State(initialValue: order.extraFrosting ? 1 : 0)
+       }
+
+
     var body: some View {
         GeometryReader { proxy in
             VStack(spacing: 24) {
