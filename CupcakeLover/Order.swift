@@ -10,12 +10,16 @@ import SwiftUI
 class Order: Codable {
     static let types = ["Vanilla", "Strawberry", "Chocolate", "Rainbow"]
 
+    var price: Double = 0.0
+
     var type = 0
     var quantity = 3
 
     // toppings
     var extraFrosting = false
     var addSprinkles = false
+    var addCoulis = false
+    
     
     var specialRequestEnabled = false {
         didSet {
@@ -53,6 +57,9 @@ class Order: Codable {
         if addSprinkles {
             cost += Decimal(quantity) / 2
         }
+        if addCoulis {
+            cost += Decimal(quantity) / 2
+        }
         return cost
     }
     
@@ -63,6 +70,7 @@ class Order: Codable {
         case _specialRequestEnabled = "specialRequestEnabled"
         case _extraFrosting = "extraFrosting"
         case _addSprinkles = "addSprinkles"
+        case _addCoulis = "addCoulis"
         case _name = "name"
         case _city = "city"
         case _streetAddress = "streetAddress"

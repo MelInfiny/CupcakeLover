@@ -2,8 +2,6 @@
 //  ContentView.swift
 //  CupcakeLover
 //
-//  Created by Emilie NOLBAS on 20/08/2025.
-//
 
 import SwiftUI
 
@@ -23,7 +21,7 @@ struct ContentView: View {
                         }
                     }
 
-                    Stepper("Number of cakes: \(order.quantity)", value: $order.quantity, in: 3...20)
+                    Stepper("Number of cakes: \(order.quantity)", value: $order.quantity, in: 1...20)
                 }
                 
                 Section {

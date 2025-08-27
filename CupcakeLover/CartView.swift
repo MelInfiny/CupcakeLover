@@ -41,6 +41,9 @@ class Cart: ObservableObject {
 
 struct CartView: View {
     @ObservedObject var cart = Cart.shared
+    @State private var showAddress = false
+    @State private var showSuccess = false
+
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,10 +80,38 @@ struct CartView: View {
                         .background(.ultraThinMaterial)
                         .shadow(color: .black.opacity(0.08), radius: 8, y: -2)
                 }
+                
+                VStack {
+                    Text("Total: \(cart.total, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))")
+                        .font(.title3.bold())
+                        .padding(.bottom, 10)
+                    
+                    Button {
+                        showAddress = true
+                    } label: {
+                        Text("Proceed to Checkout")
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
             }
         }
         .navigationTitle("Your Cart")
         .background(Color(.systemGroupedBackground))
+        .sheet(isPresented: $showAddress) {
+            AddressView(order: cart.items.first ?? Order()) {
+                cart.items.removeAll()
+                showSuccess = true
+            }
+            .presentationDetents([.medium, .large])
+            .presentationCornerRadius(24)
+        }
+        .alert("Commande validée 🎉", isPresented: $showSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Merci ! Nous préparons vos cupcakes.")
+        }
     }
 }
 

@@ -14,12 +14,23 @@ struct OrderView: View {
     @State private var frostingQty  = 0
     @State private var coulisQty    = 0
 
-    init(order: Order = Order()) {
-           _order = State(initialValue: order)
-           _sprinklesQty = State(initialValue: order.addSprinkles ? 1 : 0)
-           _frostingQty  = State(initialValue: order.extraFrosting ? 1 : 0)
-       }
+    @State private var price: Double = 3.50
 
+    init(order: Order = Order()) {
+        _order = State(initialValue: order)
+        _sprinklesQty = State(initialValue: order.addSprinkles ? 1 : 0)
+        _frostingQty  = State(initialValue: order.extraFrosting ? 1 : 0)
+        _coulisQty    = State(initialValue: order.addCoulis ? 1 : 0)
+    }
+    
+    private func updatePrice() {
+        var p = 3.50
+        p += Double(sprinklesQty) * 0.30
+        p += Double(frostingQty)  * 0.30
+        p += Double(coulisQty)    * 0.30
+        price = p
+    }
+    
 
     var body: some View {
         GeometryReader { proxy in
@@ -38,32 +49,47 @@ struct OrderView: View {
                 // Toppings: 3 images en cercle + picker +/- en dessous
                 HStack(spacing: 16) {
                     ToppingCirclePicker(imageName: "bublies",
-                                        quantity: $sprinklesQty,
-                                        range: 0...3)
+                                        quantity: Binding(
+                                            get: { sprinklesQty },
+                                            set: { sprinklesQty = $0; updatePrice() }
+                                        ),
+                                        range: 0...10)
                     .frame(maxWidth: .infinity)
                     
                     ToppingCirclePicker(imageName: "frosties",
-                                        quantity: $frostingQty,
-                                        range: 0...3)
+                                        quantity: Binding(
+                                            get: { frostingQty },
+                                            set: { frostingQty = $0; updatePrice() }
+                                        ),
+                                        range: 0...10)
                     .frame(maxWidth: .infinity)
                     
                     ToppingCirclePicker(imageName: "hearties",
-                                        quantity: $coulisQty,
-                                        range: 0...3)
+                                        quantity: Binding(
+                                            get: { coulisQty },
+                                            set: { coulisQty = $0; updatePrice() }
+                                        ),
+                                        range: 0...10)
                     .frame(maxWidth: .infinity)
                 }
                 .padding(.top, 4)
                 
                 Spacer(minLength: 8)
                 
-                AddToCartBarPastel(total: totalPrice) {
+                Text("Preview price: \(price, format: .currency(code: "USD"))")
+                    .foregroundStyle(.secondary)
+
+                AddToCartBarPastel(total: price) {
                     order.addSprinkles  = sprinklesQty > 0
+                    order.addCoulis = coulisQty  > 0
                     order.extraFrosting = frostingQty  > 0
                     Cart.shared.add(order)
                     showCart = true
                 }
                 .padding(.bottom, max(8, proxy.safeAreaInsets.bottom))
             }
+            .onAppear { updatePrice() }
+// add on change
             .sheet(isPresented: $showCart) { CartView() }
             .padding(.top, 16)
             .background(LinearGradient(
@@ -81,14 +107,6 @@ struct OrderView: View {
         }
         .navigationTitle("Customize")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    // Prix d’exemple: base + 0.30 par topping sélectionné (>0)
-    private var totalPrice: Double {
-        3.50
-        + (sprinklesQty > 0 ? 0.30 : 0)
-        + (frostingQty  > 0 ? 0.30 : 0)
-        + (coulisQty    > 0 ? 0.30 : 0)
     }
 }
 

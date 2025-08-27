@@ -2,7 +2,6 @@
 //  CheckoutView.swift
 //  CupcakeLover
 //
-//  Created by Emilie NOLBAS on 20/08/2025.
 //
 
 import SwiftUI
