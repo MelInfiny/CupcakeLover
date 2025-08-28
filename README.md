@@ -44,5 +44,14 @@ Elle s’inspire du projet *CupcakeCorner* (100 Days of SwiftUI) mais a été to
 
 ## Captures d’écran
 
+<p align="center">
+  <img src="CupcakeLover/Screen-HomeView.png" width="28%" />
+     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="CupcakeLover/Screen-OrderView.png" width="28%" />
+     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="CupcakeLover/Screen-ShippingView.png" width="28%" />
+
+</p>
+
 
 ---
