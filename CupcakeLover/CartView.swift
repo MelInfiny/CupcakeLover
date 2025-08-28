@@ -2,15 +2,23 @@
 //  CartView.swift
 //  CupcakeLover
 //
+//
 
 import SwiftUI
 
+// Quantité = côté panier, pas dans Order
+struct CartItem: Identifiable {
+    let id = UUID()
+    var order: Order
+    var quantity: Int
+}
+
 class Cart: ObservableObject {
     static let shared = Cart()
-    @Published var items: [Order] = []
+    @Published var items: [CartItem] = []
 
     func add(_ order: Order) {
-        items.append(order)
+        items.append(CartItem(order: order, quantity: 1))
     }
 
     func increment(at index: Int) {
@@ -32,22 +40,48 @@ class Cart: ObservableObject {
         items.remove(atOffsets: offsets)
     }
 
-    var total: Decimal {
-        items.map(\.cost).reduce(Decimal(0), +)
+    // ---- Pricing local (plus de Order.cost) ----
+    private func unitPrice(for order: Order) -> Decimal {
+        var cost: Decimal = 3 // $3 par cupcake
+        cost += Decimal(order.type) / 2 // complexité du type
+        if order.extraFrosting { cost += 1 }     // +$1
+        if order.addSprinkles  { cost += 0.5 }   // +$0.5
+        if order.addCoulis     { cost += 0.5 }   // +$0.5
+        return cost
     }
 
-    var isEmpty: Bool { items.isEmpty }
+    private func lineTotal(for item: CartItem) -> Decimal {
+        unitPrice(for: item.order) * Decimal(item.quantity)
+    }
+
+    var total: Decimal {
+        items.map { lineTotal(for: $0) }.reduce(0, +)
+    }
+
+    // Expose helpers à la vue si besoin
+    func unitPriceText(for order: Order) -> String {
+        let code = Locale.current.currency?.identifier ?? "USD"
+        return unitPrice(for: order).formatted(.currency(code: code))
+    }
+
+    func lineTotalText(for item: CartItem) -> String {
+        let code = Locale.current.currency?.identifier ?? "USD"
+        return lineTotal(for: item).formatted(.currency(code: code))
+    }
 }
 
 struct CartView: View {
     @ObservedObject var cart = Cart.shared
+    
+    var onGoHome: (() -> Void)? = nil
+
     @State private var showAddress = false
     @State private var showSuccess = false
-
+    
 
     var body: some View {
         VStack(spacing: 0) {
-            if cart.isEmpty {
+            if cart.items.isEmpty {
                 Spacer()
                 ContentUnavailableView("Your cart is empty",
                                        systemImage: "cart",
@@ -56,11 +90,15 @@ struct CartView: View {
             } else {
                 List {
                     ForEach(cart.items.indices, id: \.self) { i in
+                        let item = cart.items[i]
+                        
                         NavigationLink {
-                            // Ouvrir la page du cupcake sélectionné
-                            OrderView(order: cart.items[i])
+                            // On édite la config du cupcake (type/toppings)
+                            OrderView(order: item.order)
                         } label: {
-                            CartRow(order: cart.items[i],
+                            CartRow(item: item,
+                                    unitPriceText: cart.unitPriceText(for: item.order),
+                                    lineTotalText: cart.lineTotalText(for: item),
                                     onMinus: { cart.decrement(at: i) },
                                     onPlus:  { cart.increment(at: i) })
                             .buttonStyle(.plain)
@@ -76,39 +114,31 @@ struct CartView: View {
                 }
                 .listStyle(.insetGrouped)
                 .safeAreaInset(edge: .bottom) {
-                    TotalBar(total: cart.total)
+                    TotalBar(total: cart.total, onCheckout: { showAddress = true })
                         .background(.ultraThinMaterial)
                         .shadow(color: .black.opacity(0.08), radius: 8, y: -2)
                 }
-                
-                VStack {
-                    Text("Total: \(cart.total, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))")
-                        .font(.title3.bold())
-                        .padding(.bottom, 10)
-                    
-                    Button {
-                        showAddress = true
-                    } label: {
-                        Text("Proceed to Checkout")
-                            .fontWeight(.semibold)
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding()
             }
         }
         .navigationTitle("Your Cart")
         .background(Color(.systemGroupedBackground))
         .sheet(isPresented: $showAddress) {
-            AddressView(order: cart.items.first ?? Order()) {
-                cart.items.removeAll()
-                showSuccess = true
-            }
+            AddressView(
+                order: cart.items.first?.order ?? Order(),
+                onConfirm: { cart.items.removeAll() }, // vider le panier
+                onGoHome: {
+                    // on sort de la sheet et on déclenche l’alerte succès
+                    showAddress = false
+                    showSuccess = true
+                }
+            )
             .presentationDetents([.medium, .large])
             .presentationCornerRadius(24)
         }
         .alert("Commande validée 🎉", isPresented: $showSuccess) {
-            Button("OK", role: .cancel) { }
+            Button("OK") {
+                onGoHome?()   // ← retour à Home (reset du NavigationPath dans HomeView)
+            }
         } message: {
             Text("Merci ! Nous préparons vos cupcakes.")
         }
@@ -116,7 +146,9 @@ struct CartView: View {
 }
 
 private struct CartRow: View {
-    var order: Order
+    var item: CartItem
+    var unitPriceText: String
+    var lineTotalText: String
     var onMinus: () -> Void
     var onPlus:  () -> Void
 
@@ -130,12 +162,14 @@ private struct CartRow: View {
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(.quaternary, lineWidth: 1))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(Order.types[order.type])
-                    .font(.headline)
-    
+                Text(Order.types[item.order.type])
+                    .font(.title2)
 
-                Text(order.cost, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                Text(lineTotalText)
                     .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Text("Unit: \(unitPriceText)")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -148,7 +182,7 @@ private struct CartRow: View {
                 }
                 .buttonStyle(.bordered)
 
-                Text("\(order.quantity)")
+                Text("\(item.quantity)")
                     .font(.body.monospacedDigit())
                     .frame(width: 36)
 
@@ -166,6 +200,7 @@ private struct CartRow: View {
 
 private struct TotalBar: View {
     let total: Decimal
+    let onCheckout: () -> Void   // ⟵ NEW
 
     var body: some View {
         HStack(spacing: 14) {
@@ -177,14 +212,10 @@ private struct TotalBar: View {
                     .font(.title3.bold())
             }
             Spacer()
-            NavigationLink {
-                // on passe la 1ère commande au flow d’adresse (existant)
-                AddressView(order: Cart.shared.items.first ?? Order())
-            } label: {
+            Button(action: onCheckout) {                 // ⟵ AVANT: NavigationLink
                 HStack(spacing: 8) {
                     Image(systemName: "creditcard.fill")
-                    Text("Checkout")
-                        .fontWeight(.semibold)
+                    Text("Checkout").fontWeight(.semibold)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -198,20 +229,19 @@ private struct TotalBar: View {
     }
 }
 
-#Preview {
-    // Créons un mock order
-    let sample = Order()
-    sample.type = 2
-    sample.quantity = 2
-    sample.extraFrosting = true
-    sample.addSprinkles = true
 
-    // Remplissons le panier partagé
+#Preview {
+    // Mock
+    let sample = Order()
+    sample.type = 1
+    sample.extraFrosting = true
+
     let cart = Cart.shared
-    cart.items = [sample]
+    cart.items = [
+        CartItem(order: sample, quantity: 2)
+    ]
 
     return NavigationStack {
         CartView(cart: cart)
     }
 }
-

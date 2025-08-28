@@ -15,6 +15,10 @@ struct OrderView: View {
     @State private var coulisQty    = 0
 
     @State private var price: Double = 3.50
+    
+    @State private var routeToCart: Route?
+    private enum Route: Hashable { case cart }
+
 
     init(order: Order = Order()) {
         _order = State(initialValue: order)
@@ -76,21 +80,25 @@ struct OrderView: View {
                 
                 Spacer(minLength: 8)
                 
-                Text("Preview price: \(price, format: .currency(code: "USD"))")
-                    .foregroundStyle(.secondary)
 
                 AddToCartBarPastel(total: price) {
                     order.addSprinkles  = sprinklesQty > 0
                     order.addCoulis = coulisQty  > 0
                     order.extraFrosting = frostingQty  > 0
                     Cart.shared.add(order)
+                    routeToCart = .cart
                     showCart = true
                 }
                 .padding(.bottom, max(8, proxy.safeAreaInsets.bottom))
             }
             .onAppear { updatePrice() }
 // add on change
-            .sheet(isPresented: $showCart) { CartView() }
+            .navigationDestination(item: $routeToCart) { route in
+                switch route {
+                case .cart:
+                    CartView()
+                }
+            }
             .padding(.top, 16)
             .background(LinearGradient(
                 gradient: Gradient(stops: [

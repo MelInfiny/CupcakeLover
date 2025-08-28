@@ -10,50 +10,56 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(spacing: 20) {
-                Spacer()
-
-                Image("cupcake-pink")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width,
-                           height: proxy.size.height * 0.55)
-                    .clipShape(WaveShape())
-                    .ignoresSafeArea(edges: .top)
-
-                
-                // Contenu
-                VStack(spacing: 24) {
-                    Text("Sweet Moments,\nFreshly Baked.")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .multilineTextAlignment(.center)
-
-                    Button("Order Now") { showOrder = true }
-                        .font(.headline)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(LinearGradient(colors: [.pink, .brown],
-                                                   startPoint: .leading, endPoint: .trailing))
-                        .foregroundStyle(.white)
-                        .clipShape(Capsule())
-                        .shadow(radius: 5)
-                        .padding(.horizontal, 50)
-
+            NavigationStack {
+                VStack(spacing: 20) {
                     Spacer()
+                    
+                    Image("cupcake-pink")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width,
+                               height: proxy.size.height * 0.55)
+                        .clipShape(WaveShape())
+                        .ignoresSafeArea(edges: .top)
+                    
+                    
+                    // Contenu
+                    VStack(spacing: 24) {
+                        Text("Sweet Moments,\nFreshly Baked.")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                        
+                        NavigationLink(destination: OrderView()) {
+                            Text("Order Now")
+                                .font(.headline)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    LinearGradient(colors: [.pink, .brown],
+                                                   startPoint: .leading,
+                                                   endPoint: .trailing)
+                                )
+                                .foregroundStyle(.white)
+                                .clipShape(Capsule())
+                                .shadow(radius: 5)
+                        }
+                        .padding(.horizontal, 50)
+                        
+                        Spacer()
+                    }
+                    .padding(.top, 24)
                 }
-                .sheet(isPresented: $showOrder) { OrderView() }
-                .padding(.top, 24)
+                .background(LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .white, location: 0.0),
+                        .init(color: .white, location: 0.3), // blanc jusqu'à mi-écran
+                        .init(color: Color(.systemGroupedBackground), location: 0.5),
+                        .init(color: Color(.systemGroupedBackground), location: 1.0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
             }
-            .background(LinearGradient(
-                gradient: Gradient(stops: [
-                    .init(color: .white, location: 0.0),
-                    .init(color: .white, location: 0.3), // blanc jusqu'à mi-écran
-                    .init(color: Color(.systemGroupedBackground), location: 0.5),
-                    .init(color: Color(.systemGroupedBackground), location: 1.0)
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            ))
         }
     }
 }

@@ -13,7 +13,7 @@ class Order: Codable {
     var price: Double = 0.0
 
     var type = 0
-    var quantity = 3
+    var quantity = 1
 
     // toppings
     var extraFrosting = false
@@ -42,26 +42,7 @@ class Order: Codable {
         }
         return true
     }
-    
-    // cost
-    var cost: Decimal {
-        // $3 per cake
-        var cost = Decimal(quantity) * 3
-        // complicated cakes cost more
-        cost += Decimal(type) / 2
-        // $1/cake for extra frosting
-        if extraFrosting {
-            cost += Decimal(quantity)
-        }
-        // $0.50/cake for sprinkles
-        if addSprinkles {
-            cost += Decimal(quantity) / 2
-        }
-        if addCoulis {
-            cost += Decimal(quantity) / 2
-        }
-        return cost
-    }
+
     
     // for real server names decoding
     enum CodingKeys: String, CodingKey {
